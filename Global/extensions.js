@@ -1,3 +1,10 @@
+'use strict';
+
+Object.prototype.getRandomIndex = function() {
+  var len = this.length;
+  return Math.floor(Math.random() * len);
+}
+
 Object.prototype.checkObjectArrayWithValue = function(keyName, keyValue) {
     for (var i=0; i < this.length; i++) {
         if (this[i][keyName] === keyValue) {
@@ -8,8 +15,10 @@ Object.prototype.checkObjectArrayWithValue = function(keyName, keyValue) {
 }
 
 Object.prototype.playerExists = function(id) {
+  console.log('checking the player list: ', this);
     for (var i=0; i < this.length; i++) {
         if (this[i].id === id) {
+          console.log('found player: ', this[i]);
             return {
                 response:true,
                 index: i,
@@ -17,14 +26,15 @@ Object.prototype.playerExists = function(id) {
             };
         }
     }
-    return { 
-        response:false 
+    return {
+        response:false
     };
 }
 
 Object.prototype.roomExists = function(secretCode) {
     for (var i=0; i < this.length; i++) {
         if (this[i].secretCode === secretCode) {
+          console.log('roomExists: ', this[i]);
             return {
                 response:true,
                 index: i,
@@ -32,19 +42,19 @@ Object.prototype.roomExists = function(secretCode) {
             };
         }
     }
-    return { 
-        response:false 
+    return {
+        response:false
     };
 }
 
-Date.prototype.addHours = function(h) {    
-    this.setTime(this.getTime() + (h*60*60*1000)); 
-    return this;   
+Date.prototype.addHours = function(h) {
+    this.setTime(this.getTime() + (h*60*60*1000));
+    return this;
 }
 
-Date.prototype.subtractHours = function(h) {    
-    this.setTime(this.getTime() - (h*60*60*1000)); 
-    return this;   
+Date.prototype.subtractHours = function(h) {
+    this.setTime(this.getTime() - (h*60*60*1000));
+    return this;
  }
 
 Object.prototype.roomCleanup = function() {
