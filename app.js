@@ -1,10 +1,15 @@
+// add requirements from npm
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
+// add global functions and extensions
+var functions = require("./Global/functions.js");
+require("./Global/extensions.js");
+
+// add data classes 
 var Room = require('./Classes/room.js');
 var Player = require('./Classes/player.js');
-const wordList = require('./assets/words.json');
 
 const roomList = []
 
@@ -12,24 +17,34 @@ app.get('/', function(req, res) {
    res.sendfile('index.html');
 });
 
-// TODO: remove player from roomlist on disconnect
-// TODO: remove inactive rooms every 30 seconds
 // TODO: find out how to transfer large amounts of data from client to server and visa versa
+
+// room cleanup interval - 30 seconds
+var roomCleanup = function() {
+  console.log(`running room clean up`);
+  clearInterval(intervalRoomCleanup);
+  roomList.roomCleanup();
+};
+var intervalRoomCleanup = setInterval(roomCleanup, 30000);
 
 //Whenever someone connects this gets executed
 io.on('connection', function(socket) {
    console.log('A user connected', socket.id);
    //Whenever someone disconnects this piece of code executed
    socket.on('disconnect', function () {
-      console.log('A user disconnected', socket.id);
+     // find player in rooms and remove them
+     roomList.forEach(function(room, index) {
+       // remove a player if they exist in the room
+       room.playerList.removePlayer(socket.id);
+      });
    });
 
    socket.on('HOST_REQUEST', function() {
-     var secretCode = getSecretCode();
+     var secretCode = functions.getSecretCode();
      // check if a room with this secret code exists
-     var roomExists = roomList.roomExists(secretCode);
+     var roomExists = roomList.roomExists(secretCode).response;
      while (roomExists) {
-       roomExists = roomList.roomExists(secretCode);
+       roomExists = roomList.roomExists(secretCode).response;
      }
      // add the room to roomList
      var room = new Room(secretCode, 'JOIN');
@@ -40,60 +55,38 @@ io.on('connection', function(socket) {
      io.to(socket.id).emit('HOST_RESPONSE', secretCode);
    });
 
-   // secretCode, name, image
+   // secretCode, host, name, image
    socket.on('JOIN_REQUEST', function(params) {
      // check if a room with this secret code exists
-     var roomExists = roomList.roomExists(params.secretCode);
+     var roomExists = roomList.roomExists(params.secretCode).response;
      if(roomExists) {
        // find the room
        var room = roomList.find(room => {
          return room.secretCode === params.secretCode
        });
        // create a player and add them to the room
-       var player = new Player(socket.id, params.name, params.image);
+       var player = new Player(socket.id, params.host, params.name, params.image);
        console.log(`a player wants to join the room ${params.secretCode}, the player is: ${player}`);
-       var response = room.addPlayer(player);
-       if(response.isAdded) {
-         io.to(params.secretCode).emit('PLAYER_JOINED', room.playerList);
-         console.log(`the player: ${ name }, was added to the room: ${ secretCode }`);
-       }
-       else {
-         // throw error
-         console.error(`the player: ${ name }, already exists in the room: ${ secretCode }`);
-         io.to(socket.id).emit('JOIN_RESPONSE')
-       }
-     }
-     console.log(`joining with the secret code: ${params.secretCode} - it ${(roomExists?"exists":"doesn't exist")}`, roomList);
-     io.to(socket.id).emit('JOIN_RESPONSE', roomExists);
-   });
+       var isAdded = room.addPlayer(player);
+       if(isAdded) {
+        // let the room know a player was added
+        io.to(player.id).emit('JOIN_RESPONSE', { 
+          response: true,
+          message: `joined the room: ${params.secretCode}`
+         });
+        io.to(this.secretCode).emit('PLAYER_JOINED', this.playerList);
+      }
+      else {
+         io.to(player.id).emit('JOIN_RESPONSE', { 
+           response: false,
+           message: `player already exists in the room: ${params.secretCode}`
+          });
+      }
+    }
+  });
 
 });
 
 http.listen(3000, function() {
    console.log('listening on *:3000');
 });
-
-
-Object.prototype.roomExists = function(secretCode) {
-  for (var i=0; i < this.length; i++) {
-      if (this[i].secretCode === secretCode) {
-          return true;
-      }
-  }
-  return false;
-}
-
-function getSecretCode() {
-  // copy the word list array for non destructive manipulation
-  var words = wordList;
-  // get a random index for a word
-  var index = Math.floor(Math.random() * words.length) + 1;
-  // add the word to the variable
-  var wordOne = words[index];
-  // remove the word from the array
-  words.splice(index, 1);
-  // repeat process
-  index = Math.floor(Math.random() * words.length) + 1;
-  var wordTwo = words[index];
-  return wordOne + wordTwo;
-}
