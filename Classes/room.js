@@ -1,3 +1,5 @@
+require("./Global/extensions.js");
+
 // STATES:
 //   JOIN
 //   SETJUDGE
@@ -9,29 +11,39 @@ module.exports = class Room {
     this.secretCode = secretCode;
     this.startTime = new Date();
     this.playerList = [];
+    this.started = false;
     this.state = state;
   }
   
-  addPlayer(Player) {
-    var isAdded = !this.playerList.playerExists(Player.name, Player.id);
+  get started() {
+    return this.started;
+  }
+  set started(value) {
+    this.started = value;
+  }
+
+  addPlayer(player) {
+    var isAdded = !this.playerList.playerExists(player.id);
     if(isAdded) {
       // add player to rooms player list
-      this.playerList.push(Player);
-      // add the player to the room bradcast
-      Player.socket.join(this.secretCode);
+      this.playerList.push(player);
+      console.log(`the player: ${ player.name }, was added to the room: ${ this.secretCode }`);
     }
-    return {
-      isAdded: isAdded,
-      list: this.playerList
+    else {
+       // throw error
+       console.error(`the player: ${ player.name }, already exists in the room: ${ this.secretCode }`);
     }
+    return isAdded;
   }
-}
 
-Object.prototype.playerExists = function(name, id) {
-  for (var i=0; i < this.length; i++) {
-      if (this[i].name === name && this[i].id === id) {
-          return true;
-      }
+  removePlayer(playerId) {
+    var playerExists = this.playerList.playerExists(playerId);
+    if(playerExists.response) {
+      // remove the player
+      this.playerList.splice(playerExists.index, 1);
+      // let the room know a player was removed
+      io.to(this.secretCode).emit('PLAYER_REMOVED', this.playerList);
+      console.log(`the player: ${ playerExists.player.name }, was disconnected from the room: ${ this.secretCode }`);
+    }
   }
-  return false;
 }

@@ -1,6 +1,7 @@
 module.exports = class Player {
-  constructor(id, name, image) {
+  constructor(id, host, name, image) {
     this.id = id;
+    this.host = host;
     this.name = name;
     this.image = image;
   }
@@ -8,22 +9,17 @@ module.exports = class Player {
   get id() {
     return this.id;
   }
-  set id(value) {
-    this.id = value;
-  }
 
+  get host() {
+    return this.host;
+  }
+  
   get name() {
     return this.name;
-  }
-  set name(value) {
-    this.name = value;
   }
 
   get image() {
     return this.image;
-  }
-  set image(value) {
-    this.image = value;
   }
 
   get whiteCards() {
