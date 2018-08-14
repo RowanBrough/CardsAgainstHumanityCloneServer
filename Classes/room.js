@@ -38,7 +38,7 @@ module.exports = class Room {
     }
   }
 
-  removePlayer(playerId) {
+  removePlayer(playerId, io) {
     var playerExists = this.playerList.playerExists(playerId);
     if(playerExists.response) {
       // remove the player
@@ -63,24 +63,31 @@ module.exports = class Room {
 
     setJudge() {
       var judgeIndex = this.playerList.findIndex(x => x.judge == true);
-      if(judgeIndex == -1 || judgeIndex == this.playerList.length) {
-        judgeIndex == 0;
+      // set the old judge to ordinary player
+      if(judgeIndex === -1) {
+        judgeIndex = 0;
       }
       else {
-        judgeIndex++;
+        this.playerList[judgeIndex].judge = false;
+        if(judgeIndex == this.playerList.length) {
+          judgeIndex = 0;
+        }
+        else {
+          judgeIndex++;
+        }
       }
-      // set all to false
-      this.playerList = this.playerList.map(p => p.judge = false);
       // set the new judge
       this.playerList[judgeIndex].judge = true;
     }
 
     startNewRound() {
+      this.started = true;
       // deal cards to players
-      this.whiteCards = getWhiteCards();
-      this.blackCards = getBlackCards();
+      this.whiteCards = functions.getWhiteCards();
+      this.blackCards = functions.getBlackCards();
       this.assignPlayerCards();
       // choose the judge for the round
       this.setJudge();
+      return this;
     }
 }

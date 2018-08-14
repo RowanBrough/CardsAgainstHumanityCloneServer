@@ -21,12 +21,12 @@ app.get('/', function(req, res) {
 // TODO: find out how to transfer large amounts of data from client to server and visa versa
 
 // room cleanup interval - 30 seconds
-// var roomCleanup = function() {
-//   console.log(`running room clean up`);
-//   clearInterval(intervalRoomCleanup);
-//   roomList.roomCleanup();
-// };
-// var intervalRoomCleanup = setInterval(roomCleanup, 30000);
+var roomCleanup = function() {
+  console.log(`running room clean up`);
+  clearInterval(intervalRoomCleanup);
+  roomList.roomCleanup();
+};
+var intervalRoomCleanup = setInterval(roomCleanup, 30000);
 
 //Whenever someone connects this gets executed
 io.on('connection', function(socket) {
@@ -34,9 +34,13 @@ io.on('connection', function(socket) {
    //Whenever someone disconnects this piece of code executed
    socket.on('disconnect', function () {
      // find player in rooms and remove them
-     roomList.forEach(function(room, index) {
+     roomList.forEach(function(room) {
        // remove a player if they exist in the room
-       room.playerList.removePlayer(socket.id);
+       if(room.playerList) {
+        console.log(`disconnection detected - removing the player: ${ socket.id }`);
+        console.log('room.playerList: ', room.playerList);
+        room.removePlayer(socket.id, io);
+       }
       });
    });
 
@@ -89,12 +93,15 @@ io.on('connection', function(socket) {
     }
   });
 
-  socket.on('START_GAME_REQUEST', function(room) {
+  socket.on('START_GAME_REQUEST', function(startRoom) {
     // start the game
-    roomList[room].started = true;
+    var roomIndex = roomList.findIndex(x => x.secretCode == startRoom.secretCode);
+    var room = roomList[roomIndex];
     io.to(this.secretCode).emit('GAME_STARTED');
-    room.startNewRound();
-    io.to(this.secretCode).emit('GAME_STARTED_RESPONSE', room);
+    room = room.startNewRound();
+    roomList[roomIndex] = room;
+    console.log("starting the game for Room: ", room);
+    io.to(room.secretCode).emit('START_GAME_RESPONSE', room);
   });
 
 

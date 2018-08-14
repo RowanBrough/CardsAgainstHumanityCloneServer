@@ -67,12 +67,12 @@ Object.prototype.roomCleanup = function() {
             this.splice(i, 1);
             console.log(`the room: ${room.secretCode} has been deleted - no players`);
         }
-        else if( (!room.started) && (room.startTime.getTime() <= today.getTime()) ) {
-            // the room hasnt started a game
-            // the room is older than an hour
-            // delete it
-            this.splice(i, 1);
-            console.log(`the room: ${room.secretCode} has been deleted - inactive room`);
-        }
+        // else if( (!room.started) && (room.startTime.getTime() <= today.getTime()) ) {
+        //     // the room hasnt started a game
+        //     // the room is older than an hour
+        //     // delete it
+        //     this.splice(i, 1);
+        //     console.log(`the room: ${room.secretCode} has been deleted - inactive room`);
+        // }
     }
 }
